@@ -1,2 +1,10 @@
 # overall_reaction_diagram
-makes an overall reaction flux diagram when running Cantera simulations
+Makes an overall reaction flux diagram when running Cantera simulations
+
+First, run the script that runs the Cantera simulation.
+It will make a `.dot` file.
+Then run:
+
+```
+dot -Tpdf {dot_name}.dot -otree.pdf
+```
