@@ -77,7 +77,15 @@ for s in smile:
     except AttributeError:
         print("Cannot convert {} to SMILES, translating manually".format(s))
         smiles.append(s)
-names = dict(zip(keys, smiles))
+
+# this is obviously shitty, but I wanted to change as little as possible
+# I think just using the cantera output with the species names as nodes in
+#the flux diagram will work fine though, with whatever cutoff you specify. 
+use_smiles=False
+if use_smiles:
+    names = dict(zip(keys, smiles))
+else:
+    names = dict(zip(keys, keys))
 
 def semibatch(gas, surf, temp, pressure, volume, mol_in, verbose=False, sens=False):
     """
@@ -160,7 +168,9 @@ def semibatch(gas, surf, temp, pressure, volume, mol_in, verbose=False, sens=Fal
     sim.atol = 1.0e-20
 
     # rxn_time = np.linspace(1E-5, np.log10(3600), 1000001)  # from 0s to 3600s (1 hour)
-    rxn_time = np.logspace(-5, np.log10(60), 1000001)  # from 0s to 3600s (1 hour), log spacing
+    # rxn_time = np.logspace(-5, np.log10(60), 1000001)  # from 0s to 3600s (1 hour), log spacing
+    # I set this much lower so it didn't take forever to generate the diagrams. 
+    rxn_time = np.logspace(-2, np.log10(6), 100)
     gas_mole_fracs = np.zeros([gas.n_species, len(rxn_time)])
     surf_site_fracs = np.zeros([surf.n_species, len(rxn_time)])
     p = np.zeros(len(rxn_time))
@@ -287,7 +297,8 @@ print('Starting model simulation')
 a = semibatch(gas, surf, t_in, pressure, volume, ratio_in, verbose=True)
 print('Finished model simulation')
 gas_mole_fracs, surf_site_fracs, rxn_time, pressure1, overall_fluxes = a
-print(fluxes)
+# this gave me an error, idk where fluxes should get set. 
+# print(fluxes)
 plot(a, log=True)
 plot(a)
 
