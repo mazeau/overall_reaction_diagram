@@ -6,5 +6,5 @@ It will make a `.dot` file.
 Then run:
 
 ```
-dot -Tpdf {dot_name}.dot -otree.pdf
+dot -Tpdf {dot_name}.dot -o{whatever_name_you_want}.pdf
 ```
