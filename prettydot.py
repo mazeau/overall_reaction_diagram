@@ -7,6 +7,39 @@ from rmgpy.molecule import Molecule
 from rmgpy.data.base import Database
 # post processes dot file and creates a prettydot
 
+
+# get smiles dictionary
+def get_smiles_dict(species_dict_file):
+    species_dict = Database().get_species(species_dict_file)
+
+    rmg_names = species_dict.keys()
+    # get the first listed smiles string for each molecule
+    smile = []
+    for s in species_dict:
+        # treating HX separately because smiles translation drops the H
+        if s == 'HX(5)':
+            smile.append('H[Pt]')
+            continue
+        smile.append(species_dict[s].molecule[0])
+        if len(species_dict[s].molecule) is not 1:
+            print('There are %d dupllicate smiles for %s:' %
+                (len(species_dict[s].molecule), s))
+            for a in range(len(species_dict[s].molecule)):
+                print('%s' % (species_dict[s].molecule[a]))
+
+    # translate the molecules from above into just smiles strings
+    smiles = []
+    for s in smile:
+        try:
+            smiles.append(s.to_smiles())
+        except AttributeError:
+            print("Cannot convert {} to SMILES, translating manually".format(s))
+            smiles.append(s)
+
+    names = dict(zip(rmg_names, smiles))
+
+    return names
+
 def save_pictures(species_path="", overwrite=False):
     """
     Save a folder full of molecule pictures, needed for the pretty dot files.
@@ -16,12 +49,17 @@ def save_pictures(species_path="", overwrite=False):
     already there.
     """
     dictionary_filename = "./species_dictionary.txt"
+
+
+    smile_species_dict = get_smiles_dict(dictionary_filename)
+
     specs = Database().get_species(dictionary_filename, resonance=False)
     images_dir = os.path.join(species_path)
     os.makedirs(images_dir, exist_ok=True)
 
     for name, species in specs.items():
-        filepath = os.path.join(images_dir, name + ".svg")
+        spec_name = smile_species_dict[name]
+        filepath = os.path.join(images_dir, spec_name + ".svg")
         if not overwrite and os.path.exists(filepath):
             continue
         species.molecule[0].draw(filepath)
@@ -48,17 +86,16 @@ def prettydot(species_path="", dotfilepath="", strip_line_labels=False):
         '(?P<node>s\d+)\ \[\ fontname="Helvetica",\ shape=box,\ label="(?P<label>[^"]*)"\]\;'
     )
 
-    rePicture = re.compile("(?P<smiles>.+?)\((?P<id>\d+)\)\.svg")
-    reLabel = re.compile("(?P<name>.+?)\((?P<id>\d+)\)$")
+    rePicture = re.compile("(?P<smiles>.+?)\.svg")
+    reLabel = re.compile("(?P<smiles>.+?)$")
 
     species_pictures = dict()
     for picturefile in os.listdir(pictures_directory):
         match = rePicture.match(picturefile)
         if match:
-            species_pictures[match.group("id")] = picturefile
+            species_pictures[match.group("smiles")] = picturefile
         else:
             pass
-            # print(picturefile, "didn't look like a picture")
 
     filepath = dotfilepath
 
@@ -76,8 +113,11 @@ def prettydot(species_path="", dotfilepath="", strip_line_labels=False):
         if match:
             label = match.group("label")
             idmatch = reLabel.match(label)
+            # print(label)
             if idmatch:
-                idnumber = idmatch.group("id")
+                idnumber = idmatch.group("smiles")
+                # print(idnumber)
+                # print(species_pictures[idnumber])
                 if idnumber in species_pictures:
                     line = (
                         f'%s [ image="{pictures_directory}%s" label="" width="1.0" height="1.0" imagescale=true fixedsize=false color="none" ];\n'
@@ -101,8 +141,9 @@ def prettydot(species_path="", dotfilepath="", strip_line_labels=False):
     # if this gives you an error, just put the usual dot command in your terminal: 
     # dot overall_rxn_diagram-pretty.dot -Tpdf -o overall_rxn_diagram-pretty.pdf -Gdpi=300
     # I somehow have dot partially working for me, so the script runs through without an error
-    os.system(
-        f'dot {prettypath} -Tpdf -o{prettypath.replace(".dot", "", 1) + ".pdf"} -Gdpi=300')
+    # os.system(
+    #     f'dot {prettypath} -Tpdf -o{prettypath.replace(".dot", "", 1) + ".pdf"} -Gdpi=300')
+    
     return prettypath
 
 save_pictures("./species_pictures")

@@ -78,14 +78,7 @@ for s in smile:
         print("Cannot convert {} to SMILES, translating manually".format(s))
         smiles.append(s)
 
-# this is obviously shitty, but I wanted to change as little as possible
-# I think just using the cantera output with the species names as nodes in
-#the flux diagram will work fine though, with whatever cutoff you specify. 
-use_smiles=False
-if use_smiles:
-    names = dict(zip(keys, smiles))
-else:
-    names = dict(zip(keys, keys))
+names = dict(zip(keys, smiles))
 
 def semibatch(gas, surf, temp, pressure, volume, mol_in, verbose=False, sens=False):
     """
